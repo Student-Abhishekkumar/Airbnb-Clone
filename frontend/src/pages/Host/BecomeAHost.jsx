@@ -50,17 +50,23 @@ export default function BecomeAHost() {
       }
 
       try {
-        const res = await axios.get(`${API_BASE}/api/host/dashboard`, {
-          params: { clerk_id: user.id },
+        const res = await axios.get(`${API_BASE}/api/host/status`, {
+          params: {
+            clerk_id: user.id,
+          },
         });
 
-        const properties = res.data?.data?.properties || [];
-
-        if (res.data?.success && properties.length > 0) {
+        if (res.data.success && res.data.isHost) {
           setHasListedBefore(true);
-          navigate("/host", { replace: true });
+
+          navigate("/host", {
+            replace: true,
+          });
+
           return;
         }
+
+        setHasListedBefore(false);
 
         localStorage.removeItem("hasListedProperty");
         setHasListedBefore(false);
@@ -105,7 +111,7 @@ export default function BecomeAHost() {
             <h1 className="mb-3 text-4xl font-bold leading-tight text-gray-900">
               It's easy to get
               <br />
-              started on Airbnb
+              started on Stay Finder
             </h1>
 
             <p className="text-sm text-gray-500">

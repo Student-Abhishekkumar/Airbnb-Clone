@@ -98,23 +98,24 @@ class HostController extends Controller
     }
 
     public function dashboard(Request $request)
-    {
-        $clerkId = $request->query('clerk_id');
-        $role = $request->query('role');
+{
+    $clerkId = $request->query('clerk_id');
 
-        if (!$clerkId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'clerk_id required',
-            ], 400);
-        }
+    if (!$clerkId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'clerk_id required',
+        ], 400);
+    }
 
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User not found',
-            ], 404);
-        }
+    $user = User::where('clerk_id', $clerkId)->first();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not found',
+        ], 404);
+    }
 
         $properties = Property::with(['images', 'category'])
             ->where('host_id', $user->id)
@@ -183,5 +184,33 @@ class HostController extends Controller
                 ],
             ],
         ]);
+    }
+    public function status(Request $request)
+    {
+    $clerkId = $request->query('clerk_id');
+
+    if (!$clerkId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'clerk_id required'
+        ], 400);
+    }
+
+    $user = User::where('clerk_id', $clerkId)->first();
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not found'
+        ], 404);
+    }
+
+    $hasProperty = Property::where('host_id', $user->id)->exists();
+
+    return response()->json([
+        'success' => true,
+        'isHost' => $hasProperty,
+        'role' => $user->role
+    ]);
     }
 }

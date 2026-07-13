@@ -61,12 +61,13 @@ export default function Navbar() {
       }
 
       try {
-        const res = await axios.get(`${API_BASE}/api/host/dashboard`, {
-          params: { clerk_id: user.id },
+        const res = await axios.get(`${API_BASE}/api/host/status`, {
+          params: {
+            clerk_id: user.id,
+          },
         });
 
-        const properties = res.data?.data?.properties || [];
-        setIsHost(Boolean(res.data?.success && properties.length > 0));
+        setIsHost(Boolean(res.data?.success && res.data?.isHost));
       } catch (err) {
         console.error("Failed to check host status:", err);
         setIsHost(false);

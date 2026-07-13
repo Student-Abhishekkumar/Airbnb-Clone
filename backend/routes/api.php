@@ -40,6 +40,7 @@ Route::get('/amenities', [AmenityController::class, 'index']);
 Route::get('/host/dashboard', [HostController::class, 'dashboard']);
 Route::get('/host/properties/{id}/edit', [PropertyController::class, 'showForEdit']);
 Route::get('/host/properties/{id}', [PropertyController::class, 'show']);
+Route::get('/host/status', [HostController::class,'status']);
 
 // Reservation & Trip routes
 Route::post('/reservations', [ReservationController::class, 'store']);
