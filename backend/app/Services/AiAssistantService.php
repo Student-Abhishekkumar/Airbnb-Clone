@@ -77,33 +77,63 @@ class AiAssistantService
                 ];
             }
 
-            // 3. Call the Google Gemini API (Using withoutVerifying to prevent Windows local cURL SSL hangs)
-            $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={$apiKey}";
+            // 3. Define your primary and substitute/fallback models using active Google identifiers
+            $models = [
+                'gemini-1.5-flash',     
+                'gemini-2.5-flash',      
+                'gemini-1.5-pro',        
+                'gemini-2.5-flash-lite'  
+            ];
 
-            $response = Http::withoutVerifying() 
-                ->timeout(15)
-                ->withHeaders(['Content-Type' => 'application/json'])
-                ->post($endpoint, [
-                    'contents' => $contents,
-                    'systemInstruction' => [
-                        'parts' => [
-                            ['text' => "You are the StayFinder AI Support Assistant. You help users with booking stays, understanding experiences, and navigating the platform. Be concise, friendly, and helpful."]
-                        ]
-                    ],
-                    'generationConfig' => [
-                        'maxOutputTokens' => 300,
-                        'temperature' => 0.7,
-                    ]
-                ]);
+            $apiResponseText = null;
+            $lastErrorDetails = '';
 
-            if ($response->successful()) {
-                return $response->json('candidates.0.content.parts.0.text');
+            foreach ($models as $model) {
+                try {
+                    $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+
+                    $response = Http::withoutVerifying() 
+                        ->timeout(12) // Slightly shorter timeout per model to keep the UI snappy
+                        ->withHeaders(['Content-Type' => 'application/json'])
+                        ->post($endpoint, [
+                            'contents' => $contents,
+                            'systemInstruction' => [
+                                'parts' => [
+                                    ['text' => "You are the StayFinder AI Support Assistant. You help users with booking stays, understanding experiences, and navigating the platform. Be concise, friendly, and helpful."]
+                                ]
+                            ],
+                            'generationConfig' => [
+                                'maxOutputTokens' => 300,
+                                'temperature' => 0.7,
+                            ]
+                        ]);
+
+                    // If this specific model succeeds, capture text and break the loop immediately
+                    if ($response->successful()) {
+                        $apiResponseText = $response->json('candidates.0.content.parts.0.text');
+                        if (!empty($apiResponseText)) {
+                            break; 
+                        }
+                    }
+
+                    // If it did not succeed, capture error data and let the loop proceed to the next model
+                    $lastErrorDetails = "Model {$model} failed with status: " . $response->status() . " - " . $response->body();
+                    Log::warning("Gemini Fallback Triggered: " . $lastErrorDetails);
+
+                } catch (\Exception $modelException) {
+                    $lastErrorDetails = "Model {$model} threw exception: " . $modelException->getMessage();
+                    Log::warning("Gemini Fallback Triggered: " . $lastErrorDetails);
+                }
             }
 
-            // Log the exact error from Google so we can inspect it in storage/logs/laravel.log[cite: 9]
-            Log::error('Gemini API Rejection: ' . $response->status() . ' - ' . $response->body());
-            return "I'm having a little trouble connecting to my knowledge base right now. Please try again in a moment!";
+            // 4. Return the successfully generated text, or fall back to the user error response
+            if (!empty($apiResponseText)) {
+                return $apiResponseText;
+            }
 
+            // Log the cumulative error if ALL models failed
+            Log::error('Gemini API Ultimate Failure. Last error checked: ' . $lastErrorDetails);
+            return "I'm having a little trouble connecting to my knowledge base right now. Please try again in a moment!";
         } catch (\Exception $e) {
             Log::error('Gemini Service Exception: ' . $e->getMessage());
             return "Sorry, I encountered a network error while processing your request.";

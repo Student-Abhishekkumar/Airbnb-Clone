@@ -4,139 +4,130 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\HelpCenterContent;
+use Illuminate\Support\Facades\DB;
 
 class HelpCenterSeeder extends Seeder
 {
     public function run(): void
     {
-        HelpCenterContent::updateOrCreate(
-            ['url' => '/help/article/1'], 
-            [
-                'content_type' => 'top_article',
-                'tab_category' => 'Host',
-                'title'        => 'Message your host',
-                'summary'      => 'Need to get in touch? You can message your host before, during, or after your trip.',
-            ]
-        );
+        $universalSections = [
+            'Your account' => ['Setting up your account', 'Identity verification', 'Managing your account', 'Account security'],
+            'Reviews' => ['Review basics for everyone', 'Understanding reviews as a host', 'Reviewing your host', 'After a review is submitted'],
+            'Safety' => [ 'Safety concerns', 'Safety tips and guidelines', 'Reporting issues', 'Accessibility and inclusion' ],
+            'About StayFinder' => [ 'Getting started', 'How StayFinder works', 'Our community policies', 'Partnerships', 'Contact info and feedback' ]
+        ];
 
-        // Guest: Guide Card
-        HelpCenterContent::updateOrCreate(
-            ['url' => '/help/article/2'],
-            [
-                'content_type' => 'guide',
-                'tab_category' => 'Guest',
-                'title'        => 'AirCover for guests',
-                'summary'      => 'Our comprehensive protection included for free with every booking.',
-                'image'        => 'https://images.unsplash.com/photo-1622547748225-3fc4abd2cca0?q=80&w=600&auto=format&fit=crop',
-            ]
-        );
+        $tabSpecificStructure = [
+            'Guest' => [
+                'Searching and booking' => [
+                    'Search tips', 'Booking places to stay', 'Booking StayFinder Experiences', 
+                    'Booking StayFinder Services', 'Booking for someone else',
+                ],
+                'Your reservations as a guest' => [
+                    'Reservation status', 'Changes as a guest', 'Cancellations', 'Checking in', 
+                    'Checking out', 'Issues with your reservation'
+                ],
+                'Payments and pricing' => [
+                    'Paying for a reservation', 'Guest refunds and reimbursements', 'Pricing and fees', 
+                    'Invoices and receipts', 'Taxes for guests'
+                ],
+            ],
+            
+            'Home host' => [
+                'About hosting homes' => [
+                    'Preparing to host a home', 'Protection and insurance', 'Hosting regulations and standards', 'StayFinder Luxe'
+                ],
+                'Calendar and bookings' => [
+                    'Booking enquiries', 'Your booking requirements', 'Managing your calendar', 'Pre-approvals and special offers'
+                ],
+                'Payouts and taxes' => [
+                    'Donations', 'Payouts for home hosts', 'Taxes for hosts'
+                ],
+                'Managing your home listing' => [
+                    'Listing details', 'Pricing your home', 'Listing availability', 'Booking settings and Instant Book'
+                ],
+                'Your reservations as a home host' => [
+                    'How reservations work', 'Cancellations', 'Changes as a home host', 
+                    'Guest refunds and reimbursements', 'Messaging your guests'
+                ],
+                'Local rules and regulations' => [
+                    'Asia-Pacific', 'Europe', 'North America', 'South America', 'Africa'
+                ],
+            ],
 
-        // Experience Host: Top Article
-        HelpCenterContent::updateOrCreate(
-            ['url' => '/help/article/3'],
-            [
-                'content_type' => 'top_article',
-                'tab_category' => 'Experience host',
-                'title'        => 'Review policies for experiences',
-                'summary'      => 'Find out how reviews work for hosts of Airbnb Experiences.',
-            ]
-        );
+            'Experience host' => [
+                'About hosting experiences' => [
+                    'Preparing to host an experience', 'Experience categories', 
+                    'Co-hosting experiences',
+                ],
+                'Managing your experience' => [
+                    'Calendar and bookings', 'Updating your experience page', 'Pricing your experience', 'Marketing and promoting your experience'
+                ],
+                'Your reservations as an experience host' => [
+                    'Changes and cancellations', 'Refunds and reimbursements', 'Communicating with guests', 'Issues with a reservation'
+                ],
+                'Payouts and taxes for experiences' => [
+                    'Payouts', 'Taxes for hosts'
+                ],
+                'Local rules and regulations for Experiences' => [
+                    'General info', 'Asia-Pacific'
+                ],
+            ],
 
-        // Experience Host: Guide Card
-        HelpCenterContent::updateOrCreate(
-            ['url' => '/help/article/4'],
-            [
-                'content_type' => 'guide',
-                'tab_category' => 'Experience host',
-                'title'        => 'How co-hosting works for Experiences',
-                'summary'      => 'Learn how to add a co-host to help run your local experience.',
-                'image'        => 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=600&auto=format&fit=crop',
-            ]
-        );
+            'Service host' => [
+                'About hosting services' => [
+                    'Service hosting basics', 'Preparing to host a service', 'Protection and insurance', 'Service categories and guidelines'
+                ],
+                'Managing your service' => [
+                    'Calendar and bookings', 'Updating your service page', 'Pricing your service'
+                ],
+                'Your reservations as a service host' => [
+                    'Changes and cancellations', 'Refunds and reimbursements', 'Communicating with guests', 'Issues with a reservation'
+                ],
+                'Payouts and taxes for services' => [
+                    'Payouts', 'Taxes for hosts'
+                ],
+                'Local rules and regulations for Services' => [
+                    'General info', 'Service categories and guidelines'
+                ],
+            ],
 
-        // ---------------------------------------------------------
-        // GLOBAL PROMO BANNERS
-        // ---------------------------------------------------------
-        
-        HelpCenterContent::updateOrCreate(
-            ['title' => 'Our community policies', 'content_type' => 'explore_promo'],
-            [
-                'tab_category' => 'Global',
-                'summary'      => 'How we build a foundation of trust.',
-                'image'        => 'https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=600&auto=format&fit=crop',
+            'Travel admin' => [
+                'StayFinder for Work' => [
+                    'StayFinder for Work basics', 'Signing up for StayFinder for Work', 'Your company account', 
+                    'Managing employees', 'Using the dashboard', 'Account settings'
+                ],
+                'Booking and reservations' => [
+                    'Booking travel for employees', 'Managing reservations for employees'
+                ],
+                'Billing and receipts' => [
+                    'Centralized billing', 'Invoices and receipts'
+                ],
             ]
-        );
+        ];
 
-        // ---------------------------------------------------------
-        // DIRECTORY TOPICS & ARTICLES
-        // ---------------------------------------------------------
+        $createdTopics = [];
+        foreach ($tabSpecificStructure as $tabCategory => $sections) {
+            $completeTabSections = array_merge($sections, $universalSections);
+            foreach ($completeTabSections as $sectionHeading => $topics) {
+                foreach ($topics as $topicTitle) {
+                    $lookupKey = "{$tabCategory}::{$topicTitle}";
+                    
+                    $createdTopics[$lookupKey] = HelpCenterContent::create([
+                        'parent_id'       => null,
+                        'content_type'    => 'topic',
+                        'tab_category'    => $tabCategory,
+                        'section_heading' => $sectionHeading,
+                        'title'           => $topicTitle,
+                        'summary'         => "Browse helpful guides and articles regarding {$topicTitle}.",
+                        'intro'           => "Everything you need to know about {$topicTitle} on StayFinder.",
+                        'is_published'    => true,
+                    ]);
+                }
+            }
+        }
 
-        $cancellationsTopic = HelpCenterContent::updateOrCreate(
-            ['title' => 'Cancellations', 'content_type' => 'topic'],
-            [
-                'tab_category' => 'Guest',
-                'section_heading' => 'Your reservations as a guest',
-                'summary'      => 'Cancelling a reservation; Host-initiated cancellations; Cancellation policies',
-            ]
-        );
+        $this->command->info('Successfully generated all deduplicated Tier 1 topics across 5 tabs!');
 
-        // Section 1: Cancelling a reservation
-        HelpCenterContent::updateOrCreate(
-            ['title' => 'Cancel your home reservation as a guest', 'content_type' => 'article'],
-            [
-                'parent_id'       => $cancellationsTopic->id, 
-                'tab_category'    => 'Guest', 
-                'section_heading' => 'Cancelling a reservation', 
-                'summary'         => 'You can cancel or make changes to your home reservation in your trips.',
-                
-                // Example of adding structured body content for the React sidebar
-                'content_sections' => [
-                    [
-                        'id' => 'cancel-steps',
-                        'title' => 'Steps to cancel',
-                        'content' => '<p>Go to your Trips tab to find the cancellation options.</p>'
-                    ]
-                ]
-            ]
-        );
-
-        HelpCenterContent::updateOrCreate(
-            ['title' => 'Cancelling a reservation paid for using Klarna', 'content_type' => 'article'],
-            [
-                'parent_id'       => $cancellationsTopic->id,
-                'tab_category'    => 'Guest',
-                'section_heading' => 'Cancelling a reservation',
-                'summary'         => 'Even if you have a Klarna payment plan, you can still cancel your reservation on Airbnb.',
-            ]
-        );
-
-        HelpCenterContent::updateOrCreate(
-            ['title' => 'Standard cancellation policies', 'content_type' => 'article'],
-            [
-                'parent_id'       => $cancellationsTopic->id,
-                'tab_category'    => 'Guest', // The Model Accessor will turn this into "article • Guest"
-                'section_heading' => 'Cancellation policies',
-                'summary'         => 'Learn about the different cancellation policies hosts can choose from.',
-            ]
-        );
-
-        // The Directory Links
-        HelpCenterContent::updateOrCreate(
-            ['title' => 'Cancellations', 'content_type' => 'topic_link'],
-            [
-                'tab_category'    => 'Guest',
-                'section_heading' => 'Your reservations as a guest', 
-                'url'             => '/help/topic/' . $cancellationsTopic->id, 
-            ]
-        );
-
-        HelpCenterContent::updateOrCreate(
-            ['title' => 'Checking in', 'content_type' => 'topic_link'],
-            [
-                'tab_category'    => 'Guest',
-                'section_heading' => 'Your reservations as a guest',
-                'url'             => '/help/article/105',
-            ]
-        );
     }
 }

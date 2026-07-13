@@ -10,7 +10,7 @@ const FALLBACK_TOPICS = {
     { id: 3, title: "Checking out", url: "/help/topic/checking-out" }
   ],
   "Payments and pricing": [
-   { id: 4, title: "Paying for a reservation", url: "/help/topic/paying" },
+    { id: 4, title: "Paying for a reservation", url: "/help/topic/paying" },
     { id: 5, title: "Pricing and fees", url: "/help/topic/pricing" },
     { id: 6, title: "Taxes for guests", url: "/help/topic/taxes" }
   ]
@@ -26,6 +26,24 @@ export default function AllTopics() {
 
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0 });
   const tabsRef = useRef([]);
+
+  const groupTopicsBySection = (topicsArray, currentTab) => {
+    if (!Array.isArray(topicsArray)) return topicsArray;
+
+    return topicsArray.reduce((acc, topic) => {
+      const category = (topic.tab_category || "").toLowerCase();
+      const matchesTab = (topic.tab_category || "").toLowerCase() === (currentTab || "").toLowerCase();
+      const isUniversal = category === "universal";
+      if (!matchesTab && !isUniversal) return acc;
+      if (topic.parent_id !== null && topic.parent_id !== undefined) return acc;
+      const heading = topic.section_heading || "General Topics";
+      if (!acc[heading]) {
+        acc[heading] = [];
+      }
+      acc[heading].push(topic);
+      return acc;
+    }, {});
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -44,10 +62,14 @@ export default function AllTopics() {
       try {
         const data = await fetchAllTopics(activeTab);
         
-        if (isMounted) { 
-          const actualData = data?.data ? data.data : data; 
-          setCache(prev => ({ ...prev, [activeTab]: actualData }));
-          setTopicsData(actualData);
+       if (isMounted) { 
+          const rawData = data?.data ? data.data : data; 
+          const formattedData = Array.isArray(rawData) 
+            ? groupTopicsBySection(rawData, activeTab) 
+            : rawData;
+
+          setCache(prev => ({ ...prev, [activeTab]: formattedData }));
+          setTopicsData(formattedData);
         }
       } catch (e) {
         if (isMounted) { 
@@ -131,6 +153,12 @@ export default function AllTopics() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+          We couldn't load the latest topics from our server right now, so we are showing offline backup guides.
+        </div>
+      )}
+
       {/* THE MAPPED DIRECTORY COLUMNS */}
       <div className="w-full transition-all duration-300">
         {loading ? (
@@ -153,7 +181,6 @@ export default function AllTopics() {
                     </li>
                   ))}
                 </ul>
-
               </div>
             ))}
           </div>
@@ -161,7 +188,20 @@ export default function AllTopics() {
           
           /* THE REAL DATA GRID */
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-12 gap-y-10 w-full">
-            {Object.entries(topicsData).map(([sectionHeading, linksArray]) => (
+            {Object.entries(topicsData)
+              .sort(([_, linksA], [__, linksB]) => {
+                const isUniversalA = (Array.isArray(linksA) ? linksA : []).some(
+                  t => (t.tab_category || "").toLowerCase() === "universal"
+                );
+                const isUniversalB = (Array.isArray(linksB) ? linksB : []).some(
+                  t => (t.tab_category || "").toLowerCase() === "universal"
+                );
+                
+                if (!isUniversalA && isUniversalB) return -1; 
+                if (isUniversalA && !isUniversalB) return 1;  
+                return 0; 
+              })
+              .map(([sectionHeading, linksArray]) => (
               <div key={sectionHeading} className="flex flex-col">
                 
                 <h3 className="text-[18px] font-medium text-[#222222] mb-4">
@@ -169,7 +209,7 @@ export default function AllTopics() {
                 </h3>
                 
                 <ul className="flex flex-col gap-3.5">
-                  {linksArray.map(linkItem => {
+                  {(Array.isArray(linksArray) ? linksArray : []).map(linkItem => {
                     const destinationUrl = linkItem.url ? linkItem.url : `/help/topic/${linkItem.id}`;
                     return (
                       <li key={linkItem.id}>
