@@ -91,6 +91,19 @@ class HelpCenterContent extends Model
         return $crumbs;
     }
 
+    public function getUrlAttribute($value)
+    {
+        if (in_array($this->content_type, ['article', 'top_article', 'guide'])) {
+            return "/help/article/" . $this->id;
+        }
+
+        if ($this->content_type === 'topic') {
+            return "/help/topic/" . $this->id;
+        }
+
+        return $value ?: '#';
+    }
+
     public function parent()
     {
         return $this->belongsTo(HelpCenterContent::class, 'parent_id');

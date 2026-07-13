@@ -273,7 +273,7 @@ export default function HelpCenterLanding() {
             {topArticles.map((article, index) => (
               <div key={article.id || index} className="border-b border-gray-200 pb-6 flex flex-col justify-start">
                 <Link 
-                  to={`/help/article/${article.id}`} 
+                  to={article.url || `/help/article/${article.id}`} 
                 >
                   <p className="text-[18px] font-medium text-[#222222] underline decoration-1 underline-offset-[3px] hover:text-black leading-snug">
                   {article.title}</p>

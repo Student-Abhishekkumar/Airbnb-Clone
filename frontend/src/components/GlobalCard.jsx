@@ -10,47 +10,39 @@ function normalizeImagePath(img) {
   if (typeof img === "object" && img !== null) {
     img = img.url || img.image_path || "";
   }
-
   if (typeof img !== "string") return "";
-
-  const path = img.trim();
-
+  let path = img.trim().replace(/^["'[\]]+|["'[\]]+$/g, '');
   if (!path) return "";
-
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
-
   if (path.startsWith("/storage/")) {
     return `${API_BASE}${path}`;
   }
-
   if (path.startsWith("storage/")) {
     return `${API_BASE}/${path}`;
   }
-
   return `${API_BASE}/storage/${path}`;
 }
 
 function getSafeImageArray(item) {
   let extractedImages = [];
+  let rawImage = item?.image || item?.images || item?.image_url || item?.imageSrc;
 
-  if (item?.image) {
-    extractedImages = [item.image];
-  } else if (Array.isArray(item?.image_urls)) {
-    extractedImages = item.image_urls;
-  } else if (Array.isArray(item?.images)) {
-    extractedImages = item.images;
-  } else if (typeof item?.images === "string") {
+  if (!rawImage) return ["/placeholder.jpg"];
+
+  if (Array.isArray(rawImage)) {
+    extractedImages = rawImage;
+  } else if (typeof rawImage === "string") {
     try {
-      extractedImages = JSON.parse(item.images);
+      const parsed = JSON.parse(rawImage);
+      extractedImages = Array.isArray(parsed) ? parsed : [parsed];
     } catch {
-      extractedImages = [item.images];
+      extractedImages = [rawImage];
     }
   }
 
   const cleanImages = extractedImages.map(normalizeImagePath).filter(Boolean);
-
   return cleanImages.length > 0 ? cleanImages : ["/placeholder.jpg"];
 }
 
@@ -70,6 +62,7 @@ export default function GlobalCard({
   const images = getSafeImageArray(item);
   const currentImage = images[imageIndex] || "/placeholder.jpg";
   const hasMultipleImages = images.length > 1;
+  const isHelpCenter = routePrefix.includes("help");
 
   const categoryName =
     item?.category?.name || item?.category_name || item?.category || "";
@@ -151,7 +144,7 @@ export default function GlobalCard({
 
   return (
     <Link
-      to={`/${routePrefix}/${item?.id}`}
+      to={item?.url || `/${routePrefix}/${item?.id}`}
       className="group block w-full cursor-pointer"
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-100">
@@ -171,13 +164,13 @@ export default function GlobalCard({
           </div>
         )}
 
-        {showBadge && (
+        {showBadge && !isHelpCenter && (
           <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-[#222222] shadow-sm">
             Guest favourite
           </span>
         )}
 
-        {showWishlist && (
+       {showWishlist && !isHelpCenter && (
           <button
             type="button"
             onClick={handleToggleWishlist}
@@ -229,20 +222,28 @@ export default function GlobalCard({
           {item?.title || "Untitled"}
         </h3>
 
-        <div className="mt-0.5 flex items-center text-[15px] text-[#717171]">
-          <span className="text-[#222222]">{displayPrice}</span>
-          <span className="ml-1">for 1 night</span>
+        {categoryName && !isHelpCenter && (
+          <span className="mt-0.5 truncate text-[14px] text-[#717171]">
+            {categoryName}
+          </span>
+        )}
 
-          {showRating && item?.rating && (
-            <>
-              <span className="mx-1.5">·</span>
-              <span className="flex items-center gap-1 text-[#222222]">
-                <Star size={12} className="fill-current text-[#222222]" />
-                {item.rating}
-              </span>
-            </>
-          )}
-        </div>
+        {!isHelpCenter && (
+          <div className="mt-0.5 flex items-center text-[15px] text-[#717171]">
+            <span className="text-[#222222]">{displayPrice}</span>
+            <span className="ml-1">for 1 night</span>
+
+            {showRating && item?.rating && (
+              <>
+                <span className="mx-1.5">·</span>
+                <span className="flex items-center gap-1 text-[#222222]">
+                  <Star size={12} className="fill-current text-[#222222]" />
+                  {item.rating}
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </Link>
   );
